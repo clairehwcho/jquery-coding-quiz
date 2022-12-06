@@ -32,7 +32,7 @@ const highScoresItem = $("<li>").attr("class", "high-scores-item");
 const goBackButton = $("<button>").attr("class", "go-back-btn").text("Go Back");
 const clearHighScoresButton = $("<button>").attr("class", "clear-high-scores-btn").text("Clear High Scores");
 const buttonContainer = $("<div>").attr("class", "button-container").append(goBackButton, clearHighScoresButton);
-let savedScoresList = [];
+let scoresArr = [];
 
 // Create an array to make quiz.
 let questionsArray = [
@@ -176,10 +176,9 @@ function renderNextQuestion () {
 function startTimer () {
     // Timer counts down from 60.
     timeLeft = 60;
-    timerEl.text("Time: " + timeLeft);
+    // timerEl.text("Time: " + timeLeft);
     // Use the `setInterval()` method to call a function to be executed every 1000 milliseconds.
     timeInterval = setInterval(function () {
-        timeLeft--;
         timerEl.text("Time: " + timeLeft);
         // If player finishes quiz in time, set the scores and clear interval.
         if (isGameOver) {
@@ -188,6 +187,7 @@ function startTimer () {
             saveScores();
             return;
         }
+        timeLeft--;
         // If time has run out, clear interval and show result.
         if (timeLeft === 0) {
             timerEl.text("Time: 0");
@@ -196,6 +196,38 @@ function startTimer () {
         }
     }, 1000);
 }
+
+// Create a function to insert the new object in array in descending order by scores.
+function addToList (arr, newObj) {
+    // If array is empty, add the new object to the array.
+    if (arr.length === 0) {
+        arr.push(newObj);
+    }
+    // If array is not empty, compare the scores of the new object and each element in array.
+    else {
+        $(arr).each(function (i) {
+            // If current element has higher scores and next element exists, move to the next element.
+            if (arr[i].scores > newObj.scores && arr[i + 1]) {
+                return true;
+            }
+            // If the new object has higher or equal scores, insert the object at the index of current element in array.
+            else if (arr[i].scores <= newObj.scores) {
+                arr.splice(i, 0, newObj);
+                return false;
+            }
+            // If the new object has smaller scores than all the elements in array, add the object to the end of array.
+            else {
+                arr.push(newObj);
+                return false;
+            }
+        })
+    }
+};
+
+// Create a function to store an array in local storage.
+function storeList (arr) {
+    localStorage.setItem("storedScoresList", JSON.stringify(arr));
+};
 
 // The saveScores function is called when player finishes quiz in time or when time has run out.
 function saveScores () {
@@ -206,47 +238,24 @@ function saveScores () {
         $("<h1>").text("All done!"),
         $("<p>").text("Your final score is " + playerCurrentScores + "."),
         saveScoresForm
-        );
+    );
 
     // When the submit button is clicked, save the scores and show the stored high scores.
     submitButton.on("click", function handleFormSubmit (e) {
         e.preventDefault();
 
         // Create a new object to be saved.
-        const currentPlayer = {
+        const newPlayer = {
             initials: initialsInput.val(),
             scores: playerCurrentScores
         }
 
-        // Create a function to insert the new object in array in descending order by scores.
-        var addToList = function (arr, newObj) {
-            // If array is empty, add the new object to the array.
-            if (arr.length === 0) {
-                arr.push(newObj);
-            }
-            // If array is not empty, compare the scores of the new object and each element in array.
-            else {
-                $(arr).each(function (i) {
-                    // If current element has higher scores and next element exists, move to the next element.
-                    if (arr[i].scores > newObj.scores && arr[i + 1]) {
-                        return true;
-                    }
-                    // If the new object has higher or equal scores, insert the object at the index of current element in array.
-                    else if (arr[i].scores <= newObj.scores) {
-                        arr.splice(i, 0, newObj);
-                        return false;
-                    }
-                    // If the new object has smaller scores than all the elements in array, add the object to the end of array.
-                    else {
-                        arr.push(newObj);
-                        return false;
-                    }
-                })
-            }
-        }
-
         // Call the addToList function to store current player's scores in array.
-        addToList(savedScoresList, currentPlayer);
+        addToList(scoresArr, newPlayer);
+        console.log(scoresArr);
+        // Call the storeList function to store the list in local storage.
+        storeList(scoresArr);
+
         // Clear the input form.
         initialsInput.val("");
         // Show high scores.
@@ -264,10 +273,14 @@ function renderHighScores () {
     highScoresList.empty();
     highScoresItem.empty();
 
+    // Get stored high scores from localStorage.
+    scoresArr = JSON.parse(localStorage.getItem("storedScoresList"));
+    console.log(scoresArr);
+
     // Show the high scores.
     const highScoresHeadings = $("<h1>").text("High scores");
-    $.each(savedScoresList, function (i, val) {
-        highScoresItem.text(savedScoresList[i].initials + " - " + savedScoresList[i].scores)
+    $.each(scoresArr, function (i, val) {
+        highScoresItem.text(scoresArr[i].initials + " - " + scoresArr[i].scores)
         highScoresList.append(highScoresItem.clone());
     });
     gameResultContainerEl.append(highScoresHeadings, highScoresList, buttonContainer);
@@ -275,9 +288,10 @@ function renderHighScores () {
     // If the Go Back button is clicked, call back the initGame function.
     goBackButton.on("click", initGame);
 
-    // If the Clear High Scores button is clicked, clear the savedScoresList.
+    // If the Clear High Scores button is clicked, clear the scoresArr.
     clearHighScoresButton.on("click", function () {
-        savedScoresList = [];
+        scoresArr = [];
+        localStorage.clear();
         highScoresList.empty();
         highScoresItem.empty();
     })
