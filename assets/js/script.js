@@ -176,18 +176,20 @@ function renderNextQuestion () {
 function startTimer () {
     // Timer counts down from 60.
     timeLeft = 60;
-    // timerEl.text("Time: " + timeLeft);
+    timerEl.text("Time: " + timeLeft);
     // Use the `setInterval()` method to call a function to be executed every 1000 milliseconds.
     timeInterval = setInterval(function () {
-        timerEl.text("Time: " + timeLeft);
         // If player finishes quiz in time, set the scores and clear interval.
         if (isGameOver) {
             clearInterval(timeInterval);
             playerCurrentScores = timeLeft;
+            timerEl.text("Time: " + timeLeft);
             saveScores();
-            return;
+            return false;
         }
         timeLeft--;
+        timerEl.text("Time: " + timeLeft);
+
         // If time has run out, clear interval and show result.
         if (timeLeft === 0) {
             timerEl.text("Time: 0");
@@ -198,7 +200,7 @@ function startTimer () {
 }
 
 // Create a function to insert the new object in array in descending order by scores.
-function addToList (arr, newObj) {
+function insertObjToArr (arr, newObj) {
     // If array is empty, add the new object to the array.
     if (arr.length === 0) {
         arr.push(newObj);
@@ -225,7 +227,7 @@ function addToList (arr, newObj) {
 };
 
 // Create a function to store an array in local storage.
-function storeList (arr) {
+function storeArr (arr) {
     localStorage.setItem("storedScoresList", JSON.stringify(arr));
 };
 
@@ -244,22 +246,27 @@ function saveScores () {
     submitButton.on("click", function handleFormSubmit (e) {
         e.preventDefault();
 
-        // Create a new object to be saved.
-        const newPlayer = {
-            initials: initialsInput.val(),
-            scores: playerCurrentScores
+        // If input field is empty, prompt player to enter initials.
+        if (!initialsInput.val()) {
+            window.alert("Please enter your initials!");
         }
+        else {
+            // Create a new object to be saved.
+            const newPlayer = {
+                initials: initialsInput.val(),
+                scores: playerCurrentScores
+            }
 
-        // Call the addToList function to store current player's scores in array.
-        addToList(scoresArr, newPlayer);
-        console.log(scoresArr);
-        // Call the storeList function to store the list in local storage.
-        storeList(scoresArr);
+            // Call the insertObjToArr function to store current player's scores in array.
+            insertObjToArr(scoresArr, newPlayer);
+            // Call the storeArr function to store the newly added list in local storage.
+            storeArr(scoresArr);
 
-        // Clear the input form.
-        initialsInput.val("");
-        // Show high scores.
-        renderHighScores();
+            // Clear the input form.
+            initialsInput.val("");
+            // Show high scores.
+            renderHighScores();
+        }
     });
 }
 
@@ -275,7 +282,6 @@ function renderHighScores () {
 
     // Get stored high scores from localStorage.
     scoresArr = JSON.parse(localStorage.getItem("storedScoresList"));
-    console.log(scoresArr);
 
     // Show the high scores.
     const highScoresHeadings = $("<h1>").text("High scores");
@@ -288,7 +294,7 @@ function renderHighScores () {
     // If the Go Back button is clicked, call back the initGame function.
     goBackButton.on("click", initGame);
 
-    // If the Clear High Scores button is clicked, clear the scoresArr.
+    // If the Clear High Scores button is clicked, clear the scoresArr and local storage.
     clearHighScoresButton.on("click", function () {
         scoresArr = [];
         localStorage.clear();

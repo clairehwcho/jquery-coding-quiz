@@ -64,15 +64,21 @@ body button:hover,
     cursor: pointer;
 }
 
+.question-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 .current-question {
-    text-align: left;
+    text-align: center;
 }
 
 .answers-list {
     width: max-content;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
 }
 
 .answers-item {
@@ -110,5 +116,4 @@ body button:hover,
     list-style-position: inside;
     margin: 1rem;
     padding: 0.5rem 2rem;
-
 }
